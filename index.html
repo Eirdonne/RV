@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Revision Village — Study Directory</title>
+  <link rel="preconnect" href="https://googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #09090b;
+      --muted: #f4f4f5;
+      --muted-fg: #71717a;
+      --border: #e4e4e7;
+      --hover: #f4f4f5;
+      --ring: #18181b;
+      --radius: 0.5rem;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+      padding: 3rem 1.25rem 5rem;
+    }
+
+    .container { max-width: 720px; margin: 0 auto; }
+    header { margin-bottom: 1.75rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.025em; color: var(--fg); }
+    .subtitle { font-size: 0.875rem; color: var(--muted-fg); margin-top: 0.25rem; }
+
+    .toolbar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .search-wrapper { position: relative; flex: 1; }
+    .search-icon {
+      position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; color: var(--muted-fg); pointer-events: none;
+    }
+
+    #searchInput {
+      width: 100%; height: 2.375rem; padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+      font-size: 0.875rem; font-family: inherit; color: var(--fg);
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    #searchInput::placeholder { color: var(--muted-fg); }
+    #searchInput:focus { border-color: var(--ring); box-shadow: 0 0 0 1px var(--ring); }
+
+    .btn {
+      height: 2.375rem; padding: 0 0.75rem; font-size: 0.8125rem; font-weight: 500;
+      font-family: inherit; color: var(--fg); background: var(--bg);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; white-space: nowrap; transition: background-color 0.15s;
+    }
+    .btn:hover { background: var(--hover); }
+
+    .accordion-root { border-top: 1px solid var(--border); }
+    details { border-bottom: 1px solid var(--border); }
+    details details {
+      border-bottom: none; border-left: 1px solid var(--border);
+      margin-left: 0.875rem; padding-left: 0.625rem;
+    }
+
+    summary {
+      list-style: none; display: flex; align-items: center; justify-content: space-between;
+      padding: 0.875rem 0.375rem; font-size: 0.9375rem; font-weight: 500;
+      cursor: pointer; user-select: none; border-radius: 0.375rem; transition: background-color 0.15s;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary:hover { text-decoration: underline; text-underline-offset: 4px; }
+    details details summary { padding: 0.625rem 0.375rem; font-size: 0.875rem; }
+
+    .summary-left { display: flex; align-items: center; gap: 0.5rem; }
+    .count-badge { font-size: 0.75rem; font-weight: 400; color: var(--muted-fg); text-decoration: none !important; }
+    .chevron { width: 16px; height: 16px; color: var(--muted-fg); transition: transform 0.2s ease; flex-shrink: 0; }
+    details[open] > summary .chevron { transform: rotate(180deg); }
+
+    .folder-content { padding-bottom: 0.625rem; }
+    .file-list {
+      list-style: none; margin-left: 0.875rem; padding-left: 0.625rem;
+      border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.125rem;
+    }
+
+    .file-item a {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      padding: 0.45rem 0.625rem; font-size: 0.85rem; color: var(--fg);
+      text-decoration: none; border-radius: 0.375rem; transition: background-color 0.12s;
+    }
+    .file-item a:hover { background-color: var(--hover); }
+    .file-left { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+    .file-icon { width: 14px; height: 14px; color: var(--muted-fg); flex-shrink: 0; }
+    .file-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .badge {
+      font-size: 0.6875rem; font-weight: 500; padding: 0.1rem 0.45rem;
+      border-radius: 9999px; border: 1px solid var(--border); color: var(--muted-fg);
+      background: var(--bg); flex-shrink: 0;
+    }
+    .badge-pdf { color: #09090b; background: var(--muted); }
+    .empty-state { display: none; text-align: center; padding: 3rem 1rem; color: var(--muted-fg); font-size: 0.875rem; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Revision Village</h1>
+      <p class="subtitle">IB Study Notes, Topic Quizzes &amp; Practice Exams</p>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search topics, papers, or files..." autocomplete="off" />
+      </div>
+      <button class="btn" id="toggleAllBtn" type="button">Expand All</button>
+    </div>
+
+    <main id="directoryRoot" class="accordion-root"></main>
+    <div id="emptyState" class="empty-state">No matching files or folders found.</div>
+  </div>
+
+  <script>
+    const DIRECTORY_DATA = [
+      {
+        name: "Chemistry HL",
+        children: [
+          {
+            name: "Mock exams",
+            children: [
+              {
+                name: "Set 1",
+                files: [
+                  { title: "Paper 1A", path: "Chemistry HL/Mock exams/Set 1/IB Chemistry HL - Practice Exams - Mock Exam Set 1 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Chemistry HL/Mock exams/Set 1/IB Chemistry HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Chemistry HL/Mock exams/Set 1/IB Chemistry HL - Practice Exams - Mock Exam Set 1 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 2",
+                files: [
+                  { title: "Paper 1A", path: "Chemistry HL/Mock exams/Set 2/IB Chemistry HL - Practice Exams - Mock Exam Set 2 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Chemistry HL/Mock exams/Set 2/IB Chemistry HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Chemistry HL/Mock exams/Set 2/IB Chemistry HL - Practice Exams - Mock Exam Set 2 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 3",
+                files: [
+                  { title: "Paper 1A", path: "Chemistry HL/Mock exams/Set 3/IB Chemistry HL - Practice Exams - Mock Exam Set 3 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Chemistry HL/Mock exams/Set 3/IB Chemistry HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Chemistry HL/Mock exams/Set 3/IB Chemistry HL - Practice Exams - Mock Exam Set 3 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 4",
+                files: [
+                  { title: "Paper 1A", path: "Chemistry HL/Mock exams/Set 4/IB Chemistry HL - Practice Exams - Mock Exam Set 4 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Chemistry HL/Mock exams/Set 4/IB Chemistry HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Chemistry HL/Mock exams/Set 4/IB Chemistry HL - Practice Exams - Mock Exam Set 4 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 5",
+                files: [
+                  { title: "Paper 1A", path: "Chemistry HL/Mock exams/Set 5/IB Chemistry HL - Practice Exams - Mock Exam Set 5 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Chemistry HL/Mock exams/Set 5/IB Chemistry HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Chemistry HL/Mock exams/Set 5/IB Chemistry HL - Practice Exams - Mock Exam Set 5 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 6",
+                files: [
+                  { title: "Paper 1A", path: "Chemistry HL/Mock exams/Set 6/IB Chemistry HL - Practice Exams - Mock Exam Set 6 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Chemistry HL/Mock exams/Set 6/IB Chemistry HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Chemistry HL/Mock exams/Set 6/IB Chemistry HL - Practice Exams - Mock Exam Set 6 Paper 2.html" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "Notes",
+            children: [
+              {
+                name: "S1 — The Particulate Nature of Matter",
+                files: [
+                  { title: "S1.1 — The Particulate Nature of Matter", path: "Chemistry HL/Notes/RV - IB Chemistry HL - The Particulate Nature of Matter - S1.1 - The Particulate Nature of Matter.pdf" },
+                  { title: "S1.2 — The Nuclear Atom", path: "Chemistry HL/Notes/RV - IB Chemistry HL - The Particulate Nature of Matter - S1.2 - The Nuclear Atom.pdf" },
+                  { title: "S1.3 — Electron Configurations", path: "Chemistry HL/Notes/RV - IB Chemistry HL - The Particulate Nature of Matter - S1.3 - Electron Configurations.pdf" },
+                  { title: "S1.4 — The Mole", path: "Chemistry HL/Notes/RV - IB Chemistry HL - The Particulate Nature of Matter - S1.4 - The Mole.pdf" },
+{ title: "S1.5 — Ideal Gases", path: "Chemistry HL/Notes/RV - IB Chemistry HL - The Particulate Nature of Matter - S1.5 - Ideal Gases.pdf" }
+]
+},
+{
+name: "S2 — Bonding and Structure",
+files: [
+{ title: "S2.1 — The Ionic Model", path: "Chemistry HL/Notes/RV - IB Chemistry HL - Bonding and Structure - S2.1 - The Ionic Model.pdf" },
+{ title: "S2.2 — The Covalent Model", path: "Chemistry HL/Notes/RV - IB Chemistry HL - Bonding and Structure - S2.2 - The Covalent Model.pdf" },
+{ title: "S2.3 — The Metallic Model", path: "Chemistry HL/Notes/RV - IB Chemistry HL - Bonding and Structure - S2.3 - The Metallic Model.pdf" },
+{ title: "S2.4 — From Models to Materials", path: "Chemistry HL/Notes/RV - IB Chemistry HL - Bonding and Structure - S2.4 - From Models to Materials.pdf" }
+]
+},
+{
+name: "S3 — Classification of Matter",
+files: [
+{ title: "S3.1 — The Periodic Table", path: "Chemistry HL/Notes/RV - IB Chemistry HL - Classification of Matter - S3.1 - The Periodic Table.pdf" },
+{ title: "S3.2 — Classification of Organic Compounds", path: "Chemistry HL/Notes/RV - IB Chemistry HL - Classification of Matter - S3.2 - Classification of Organic Compounds.pdf" }
+]
+}
+]
+},
+{
+name: "Paper 1B",
+children: [
+{
+name: "R1",
+files: [
+{ title: "Enthalpy Change of Solution", path: "Chemistry HL/Paper 1B/R1/IB Chemistry HL Paper 1B - Enthalpy Change of Solution.html" },
+{ title: "Enthalpy of Combustion of Alcohols", path: "Chemistry HL/Paper 1B/R1/IB Chemistry HL Paper 1B - Enthalpy of Combustion of Alcohols.html" },
+{ title: "Thermometric Titration of NaOH", path: "Chemistry HL/Paper 1B/R1/IB Chemistry HL Paper 1B - Thermometric Titration of NaOH.html" }
+]
+},
+{
+name: "R2",
+files: [
+{ title: "Clock Reaction Activation Energy", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Clock Reaction Activation Energy.html" },
+{ title: "Clock Reaction Order and Rate Constant", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Clock Reaction Order and Rate Constant.html" },
+{ title: "Cobalt Chloride Equilibrium", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Cobalt Chloride Equilibrium.html" },
+{ title: "Decomposition of Nitrogen Pentoxide", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Decomposition of Nitrogen Pentoxide.html" },
+{ title: "Determination of Iron in Vitamin Tablet", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Determination of Iron in Vitamin Tablet.html" },
+{ title: "Dinitrogen Tetroxide Equilibrium", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Dinitrogen Tetroxide Equilibrium.html" },
+{ title: "Eggshell Back-Titration", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Eggshell Back-Titration.html" },
+{ title: "Iodine Monochloride Equilibrium", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Iodine Monochloride Equilibrium.html" },
+{ title: "Rate of Mg + HCl", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Rate of Mg + HCl.html" },
+{ title: "Rate of Nitrogen Dioxide Production", path: "Chemistry HL/Paper 1B/R2/IB Chemistry HL Paper 1B - Rate of Nitrogen Dioxide Production.html" }
+]
+},
+{
+name: "R3",
+files: [
+{ title: "Copper Concentration Cell", path: "Chemistry HL/Paper 1B/R3/IB Chemistry HL Paper 1B - Copper Concentration Cell.html" },
+{ title: "Copper(II) Removal from Wastewater", path: "Chemistry HL/Paper 1B/R3/IB Chemistry HL Paper 1B - Copper(II) Removal from Wastewater.html" },
+{ title: "Measuring the Faraday Constant", path: "Chemistry HL/Paper 1B/R3/IB Chemistry HL Paper 1B - Measuring the Faraday Constant.html" },
+{ title: "Recrystallisation of Benzoic Acid", path: "Chemistry HL/Paper 1B/R3/IB Chemistry HL Paper 1B - Recrystallisation of Benzoic Acid.html" },
+{ title: "Sea Water: Carbon Dioxide Capture and Electrolysis", path: "Chemistry HL/Paper 1B/R3/IB Chemistry HL Paper 1B - Sea Water_ Carbon Dioxide Capture and Electrolysis.html" },
+{ title: "Titration of Vinegar", path: "Chemistry HL/Paper 1B/R3/IB Chemistry HL Paper 1B - Titration of Vinegar.html" }
+]
+},
+{
+name: "S1",
+files: [
+{ title: "Molar Volume of Hydrogen Gas", path: "Chemistry HL/Paper 1B/S1/IB Chemistry HL Paper 1B - Molar Volume of Hydrogen Gas.html" },
+{ title: "Serial Dilutions of Standards", path: "Chemistry HL/Paper 1B/S1/IB Chemistry HL Paper 1B - Serial Dilutions of Standards.html" }
+]
+},
+{
+name: "S2",
+files: [
+{ title: "Candy Dye Chromatography", path: "Chemistry HL/Paper 1B/S2/IB Chemistry HL Paper 1B - Candy Dye Chromatography.html" },
+{ title: "Dipole Moment and Electronegativity of Hydrides", path: "Chemistry HL/Paper 1B/S2/IB Chemistry HL Paper 1B - Dipole Moment and Electronegativity of Hydrides.html" }
+]
+},
+{
+name: "S3",
+files: [
+{ title: "Ionisation Energy and Bond Dipoles", path: "Chemistry HL/Paper 1B/S3/IB Chemistry HL Paper 1B - Ionisation Energy and Bond Dipoles.html" },
+{ title: "Reaction of Chloromethane with Hydroxide Ion", path: "Chemistry HL/Paper 1B/S3/IB Chemistry HL Paper 1B - Reaction of Chloromethane with Hydroxide Ion.html" }
+]
+}
+]
+},
+{
+name: "Prediction exams",
+files: [
+{ title: "Paper 1A", path: "Chemistry HL/Prediction exams/IB Chemistry HL Prediction Exam - Paper 1A.html" },
+{ title: "Paper 1B", path: "Chemistry HL/Prediction exams/IB Chemistry HL Paper 1B - Paper 1B.html" },
+{ title: "Paper 2", path: "Chemistry HL/Prediction exams/IB Chemistry HL Prediction Exam - Paper 2.html" }
+]
+}
+]
+},
+      {
+        name: "Economics SL",
+        children: [
+          {
+            name: "Case Studies",
+            children: [
+              {
+                name: "Unit 2",
+                files: [
+                  { title: "California Groundwater", path: "Economics SL/Case Studies/Unit 2/IB Economics SL Assessment Practice - California Groundwater.html" },
+                  { title: "Markets for Chicken and Beef", path: "Economics SL/Case Studies/Unit 2/IB Economics SL Assessment Practice - Markets for Chicken and Beef.html" },
+                  { title: "Real Madrid Tickets", path: "Economics SL/Case Studies/Unit 2/IB Economics SL Assessment Practice - Real Madrid Tickets.html" },
+                  { title: "Smoking in South Africa", path: "Economics SL/Case Studies/Unit 2/IB Economics SL Assessment Practice - Smoking in South Africa.html" },
+                  { title: "The Brazilian Coffee Industry", path: "Economics SL/Case Studies/Unit 2/IB Economics SL Assessment Practice - The Brazilian Coffee Industry.html" }
+                ]
+              },
+              {
+                name: "Unit 3",
+                files: [
+                  { title: "Australia’s 2024-25 Federal Budget", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Australia’s 2024-25 Federal Budget.html" },
+                  { title: "Employment and Labour Unions in Iceland", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Employment and Labour Unions in Iceland.html" },
+                  { title: "Expansionary Monetary Policy in Japan", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Expansionary Monetary Policy in Japan.html" },
+                  { title: "Inequality in Singapore", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Inequality in Singapore.html" },
+                  { title: "Inflation in Argentina", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Inflation in Argentina.html" },
+                  { title: "Malaysia", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Malaysia.html" },
+                  { title: "Measuring US Inflation", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Measuring US Inflation.html" },
+                  { title: "Regional differences in the United Kingdom", path: "Economics SL/Case Studies/Unit 3/IB Economics SL Assessment Practice - Regional differences in the United Kingdom.html" }
+                ]
+              },
+              {
+                name: "Unit 4",
+                files: [
+                  { title: "Europe’s Strawberry Market", path: "Economics SL/Case Studies/Unit 4/IB Economics SL Assessment Practice - Europe’s Strawberry Market.html" },
+                  { title: "Guyana's Oil Sector", path: "Economics SL/Case Studies/Unit 4/IB Economics SL Assessment Practice - Guyana's Oil Sector.html" },
+                  { title: "LA Shipping Costs", path: "Economics SL/Case Studies/Unit 4/IB Economics SL Assessment Practice - LA Shipping Costs.html" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "Exam-Style",
+            children: [
+              {
+                name: "Paper 1",
+                files: [
+                  { title: "Economic Growth in Luxembourg and India", path: "Economics SL/Exam-Style/Paper 1/IB Economics SL Assessment Practice - Economic Growth in Luxembourg and India.html" },
+                  { title: "Wheat Subsidies in India and the European Union", path: "Economics SL/Exam-Style/Paper 1/IB Economics SL Assessment Practice - Wheat Subsidies in India and the European Union.html" }
+                ]
+              },
+              {
+                name: "Paper 2",
+                files: [
+                  { title: "Argentina", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Argentina.html" },
+                  { title: "Cambodia", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Cambodia.html" },
+                  { title: "Colombia", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Colombia.html" },
+                  { title: "Kazakhstan", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Kazakhstan.html" },
+                  { title: "Maldives", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Maldives.html" },
+                  { title: "Morocco", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Morocco.html" },
+                  { title: "Pakistan", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Pakistan.html" },
+                  { title: "Sri Lanka", path: "Economics SL/Exam-Style/Paper 2/IB Economics SL Assessment Practice - Sri Lanka.html" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "IA",
+            files: [
+              { title: "IA Bootcamp — Global Economy Sample Commentaries", path: "Economics SL/IA/IB Economics SL Internal Assessment (IA) - IA Bootcamp - Global Economy Sample Commentaries.html" }
+            ]
+          },
+          {
+            name: "Mock exams",
+            children: [
+              {
+                name: "Set 1",
+                files: [
+                  { title: "Paper 1", path: "Economics SL/Mock exams/Set 1/IB Economics SL - Practice Exams - Mock Exam Set 1 Paper 1.html" },
+                  { title: "Paper 2", path: "Economics SL/Mock exams/Set 1/IB Economics SL Assessment Practice - Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 2",
+                files: [
+                  { title: "Paper 1", path: "Economics SL/Mock exams/Set 2/IB Economics SL - Practice Exams - Mock Exam Set 2 Paper 1.html" },
+                  { title: "Paper 2", path: "Economics SL/Mock exams/Set 2/IB Economics SL Assessment Practice - Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 3",
+                files: [
+                  { title: "Paper 1", path: "Economics SL/Mock exams/Set 3/IB Economics SL - Practice Exams - Mock Exam Set 3 Paper 1.html" },
+                  { title: "Paper 2", path: "Economics SL/Mock exams/Set 3/IB Economics SL Assessment Practice - Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 4",
+                files: [
+                  { title: "Paper 1", path: "Economics SL/Mock exams/Set 4/IB Economics SL - Practice Exams - Mock Exam Set 4 Paper 1.html" },
+                  { title: "Paper 2", path: "Economics SL/Mock exams/Set 4/IB Economics SL Assessment Practice - Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 5",
+                files: [
+                  { title: "Paper 1", path: "Economics SL/Mock exams/Set 5/IB Economics SL - Practice Exams - Mock Exam Set 5 Paper 1.html" },
+                  { title: "Paper 2", path: "Economics SL/Mock exams/Set 5/IB Economics SL Assessment Practice - Paper 2.html" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "Prediction exam",
+            files: [
+              { title: "Paper 1", path: "Economics SL/Prediction exam/IB Economics SL Prediction Exam - Paper 1.html" },
+              { title: "Paper 2", path: "Economics SL/Prediction exam/IB Economics SL Assessment Practice - Paper 2.html" }
+            ]
+          },
+          {
+            name: "Revision Ladder",
+            files: [
+              { title: "Level 1", path: "Economics SL/Revision Ladder/IB Economics SL Practice Exam - Revision Ladder - Level 1.html" },
+              { title: "Level 2", path: "Economics SL/Revision Ladder/IB Economics SL Practice Exam - Revision Ladder - Level 2.html" },
+              { title: "Level 3", path: "Economics SL/Revision Ladder/IB Economics SL Practice Exam - Revision Ladder - Level 3.html" },
+              { title: "Level 4", path: "Economics SL/Revision Ladder/IB Economics SL Practice Exam - Revision Ladder - Level 4.html" },
+              { title: "Level 5", path: "Economics SL/Revision Ladder/IB Economics SL Practice Exam - Revision Ladder - Level 5.html" },
+              { title: "Level 6", path: "Economics SL/Revision Ladder/IB Economics SL Practice Exam - Revision Ladder - Level 6.html" }
+            ]
+          },
+          {
+            name: "Topic Quizzes",
+            children: [
+              {
+                name: "Foundations",
+                files: [
+                  { title: "Foundations (all)", path: "Economics SL/Topic Quizzes/Foundations/IB Economics SL Practice Exam - Foundations (all).html" }
+                ]
+              },
+              {
+                name: "Unit 1",
+                files: [
+                  { title: "Demand, Supply, and Equilibrium", path: "Economics SL/Topic Quizzes/Unit 1/IB Economics SL Practice Exam - Demand, Supply, and Equilibrium.html" },
+                  { title: "Elasticities", path: "Economics SL/Topic Quizzes/Unit 1/IB Economics SL Practice Exam - Elasticities.html" },
+                  { title: "Government Intervention", path: "Economics SL/Topic Quizzes/Unit 1/IB Economics SL Practice Exam - Government Intervention.html" },
+                  { title: "Market Failure", path: "Economics SL/Topic Quizzes/Unit 1/IB Economics SL Practice Exam - Market Failure.html" }
+                ]
+              },
+              {
+                name: "Unit 3",
+                files: [
+                  { title: "Economic Output, AD & AS", path: "Economics SL/Topic Quizzes/Unit 3/IB Economics SL Practice Exam - Economic Output, AD & AS.html" },
+{ title: "Macroeconomic Objectives, Inequality and Poverty", path: "Economics SL/Topic Quizzes/Unit 3/IB Economics SL Practice Exam - Macroeconomic Objectives, Inequality and Poverty.html" },
+{ title: "Monetary, Fiscal, and Supply-Side Policies", path: "Economics SL/Topic Quizzes/Unit 3/IB Economics SL Practice Exam - Monetary, Fiscal, and Supply-Side Policies.html" }
+]
+},
+{
+name: "Unit 4",
+files: [
+{ title: "Economic Development", path: "Economics SL/Topic Quizzes/Unit 4/IB Economics SL Practice Exam - Economic Development.html" },
+{ title: "Exchange Rates and the Balance of Payments", path: "Economics SL/Topic Quizzes/Unit 4/IB Economics SL Practice Exam - Exchange Rates and the Balance of Payments.html" },
+{ title: "Free Trade, Trade Protection, and Economic Integration", path: "Economics SL/Topic Quizzes/Unit 4/IB Economics SL Practice Exam - Free Trade, Trade Protection, and Economic Integration.html" }
+]
+}
+]
+}
+]
+},
+{
+name: "Literature SL",
+children: [
+{
+name: "Books",
+children: [
+{
+name: "1984",
+files: [
+{ title: "Final Assessment", path: "Literature SL/Books/1984/IB English Literature SL Literary & Assessment Bootcamps - Drama - Final Assessment.html" },
+{ title: "Hotspots — Paper 2 Practice", path: "Literature SL/Books/1984/IB English Literature SL Literary & Assessment Bootcamps - Drama - Hotspots - Paper 2 Practice.html" }
+]
+},
+{
+name: "A Doll's House",
+files: [
+{ title: "Final Assessment", path: "Literature SL/Books/A Doll's House/IB English Literature SL Literary & Assessment Bootcamps - Drama - Final Assessment.html" },
+{ title: "Hotspots — Paper 2 Practice", path: "Literature SL/Books/A Doll's House/IB English Literature SL Literary & Assessment Bootcamps - Drama - Hotspots - Paper 2 Practice.html" }
+]
+},
+{
+name: "A Streetcar Named Desire",
+files: [
+{ title: "Final Assessment", path: "Literature SL/Books/A Streetcar Named Desire/IB English Literature SL Literary & Assessment Bootcamps - Prose Fiction - Final Assessment.html" },
+{ title: "Hotspots — Paper 2 Practice", path: "Literature SL/Books/A Streetcar Named Desire/IB English Literature SL Literary & Assessment Bootcamps - Prose Fiction - Hotspots - Paper 2 Practice.html" }
+]
+},
+{
+name: "Carol Ann Duffy",
+files: [
+{ title: "Final Assessment", path: "Literature SL/Books/Carol Ann Duffy/IB English Literature SL Literary & Assessment Bootcamps - Poetry - Final Assessment.html" },
+{ title: "Hotspots — Paper 2 Practice", path: "Literature SL/Books/Carol Ann Duffy/IB English Literature SL Literary & Assessment Bootcamps - Poetry - Hotspots - Paper 2 Practice.html" }
+]
+}
+]
+},
+{
+name: "Guides",
+files: [
+{ title: "Paper 1 — Elements of Drama", path: "Literature SL/Guides/IB English Literature SL Literary & Assessment Bootcamps - Paper 1 - Elements of Drama.html" },
+{ title: "Paper 1 — Elements of Poetry", path: "Literature SL/Guides/IB English Literature SL Literary & Assessment Bootcamps - Paper 1 - Elements of Poetry.html" },
+{ title: "Paper 1 — Elements of Prose Fiction", path: "Literature SL/Guides/IB English Literature SL Literary & Assessment Bootcamps - Paper 1 - Elements of Prose Fiction.html" },
+{ title: "Paper 1 — Elements of Prose Non-Fiction", path: "Literature SL/Guides/IB English Literature SL Literary & Assessment Bootcamps - Paper 1 - Elements of Prose Non-Fiction.html" }
+]
+},
+{
+name: "Mock exams",
+children: [
+{
+name: "Set 1",
+files: [
+{ title: "Paper 1", path: "Literature SL/Mock exams/Set 1/IB English Literature SL Questionbank - Paper 1.html" },
+{ title: "Paper 2", path: "Literature SL/Mock exams/Set 1/IB English Literature SL Questionbank - Paper 2.html" }
+]
+},
+{
+name: "Set 2",
+files: [
+{ title: "Paper 1", path: "Literature SL/Mock exams/Set 2/IB English Literature SL Questionbank - Paper 1.html" },
+{ title: "Paper 2", path: "Literature SL/Mock exams/Set 2/IB English Literature SL Questionbank - Paper 2.html" }
+]
+},
+{
+name: "Set 3",
+files: [
+{ title: "Paper 1", path: "Literature SL/Mock exams/Set 3/IB English Literature SL Questionbank - Paper 1.html" },
+{ title: "Paper 2", path: "Literature SL/Mock exams/Set 3/IB English Literature SL Questionbank - Paper 2.html" }
+]
+},
+{
+name: "Set 4",
+files: [
+{ title: "Paper 1", path: "Literature SL/Mock exams/Set 4/IB English Literature SL Questionbank - Paper 1.html" },
+{ title: "Paper 2", path: "Literature SL/Mock exams/Set 4/IB English Literature SL Questionbank - Paper 2.html" }
+]
+},
+{
+name: "Set 5",
+files: [
+{ title: "Paper 1", path: "Literature SL/Mock exams/Set 5/IB English Literature SL Questionbank - Paper 1.html" },
+{ title: "Paper 2", path: "Literature SL/Mock exams/Set 5/IB English Literature SL Questionbank - Paper 2.html" }
+]
+},
+{
+name: "Set 6",
+files: [
+{ title: "Paper 1", path: "Literature SL/Mock exams/Set 6/IB English Literature SL Questionbank - Paper 1.html" }
+]
+}
+]
+},
+{
+name: "Paper 2",
+files: [
+{ title: "Breaking Down Questions & Brainstorming", path: "Literature SL/Paper 2/IB English Literature SL Literary & Assessment Bootcamps - Individual Oral & Paper 2 - Breaking Down Questions & Brainstorming.html" },
+{ title: "Evaluating Sample Responses", path: "Literature SL/Paper 2/IB English Literature SL Literary & Assessment Bootcamps - Individual Oral & Paper 2 - Evaluating Sample Responses.html" },
+{ title: "Outlining & Creating Thesis Statements", path: "Literature SL/Paper 2/IB English Literature SL Literary & Assessment Bootcamps - Individual Oral & Paper 2 - Outlining & Creating Thesis Statements.html" },
+{ title: "Writing the Paper", path: "Literature SL/Paper 2/IB English Literature SL Literary & Assessment Bootcamps - Individual Oral & Paper 2 - Writing the Paper.html" }
+]
+},
+{
+name: "Prediction exam",
+files: [
+{ title: "Paper 1", path: "Literature SL/Prediction exam/IB English Literature SL Questionbank - Paper 1.html" },
+{ title: "Paper 2", path: "Literature SL/Prediction exam/IB English Literature SL Questionbank - Paper 2.html" }
+]
+},
+{
+name: "Sample responses",
+files: [
+{ title: "Drama — Paper 1 Close Reading & Sample Response", path: "Literature SL/Sample responses/Drama - Paper 1 - Close Reading & Sample Response.html" },
+{ title: "Poetry — Paper 1 Close Reading & Sample Response", path: "Literature SL/Sample responses/Poetry - Paper 1 - Close Reading & Sample Response.html" },
+{ title: "Prose — Paper 1 Close Reading & Sample Response", path: "Literature SL/Sample responses/Prose - Paper 1 - Close Reading & Sample Response.html" },
+{ title: "Prose non-fiction — Paper 1 Close Reading & Sample Response", path: "Literature SL/Sample responses/Prose non-fiction - Paper 1 - Close Reading & Sample Response.html" }
+]
+}
+]
+},
+      {
+        name: "Physics HL",
+        children: [
+          {
+            name: "IA",
+            files: [
+              { title: "Conclusion", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Conclusion.html" },
+              { title: "Conducting Your Experiment", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Conducting Your Experiment.html" },
+              { title: "Evaluation", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Evaluation.html" },
+              { title: "Exemplar 1 — High Score", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Exemplar 1 - High Score.html" },
+              { title: "Exemplar 2 — High 5 / Low 6", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Exemplar 2 - High 5 _ Low 6.html" },
+              { title: "Processing & Presenting Your Results", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Processing & Presenting Your Results.html" },
+              { title: "Research and Design", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Research and Design.html" },
+              { title: "Writing Your Research Design Section", path: "Physics HL/IA/IB Physics HL Internal Assessment (IA) - IA Bootcamp - Writing Your Research Design Section.html" }
+            ]
+          },
+          {
+            name: "Mock exams",
+            children: [
+              {
+                name: "Set 1",
+                files: [
+                  { title: "Paper 1A", path: "Physics HL/Mock exams/Set 1/IB Physics HL - Practice Exams - Mock Exam Set 1 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Physics HL/Mock exams/Set 1/IB Physics HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Physics HL/Mock exams/Set 1/IB Physics HL - Practice Exams - Mock Exam Set 1 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 2",
+                files: [
+                  { title: "Paper 1A", path: "Physics HL/Mock exams/Set 2/IB Physics HL - Practice Exams - Mock Exam Set 2 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Physics HL/Mock exams/Set 2/IB Physics HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Physics HL/Mock exams/Set 2/IB Physics HL - Practice Exams - Mock Exam Set 2 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 3",
+                files: [
+                  { title: "Paper 1A", path: "Physics HL/Mock exams/Set 3/IB Physics HL - Practice Exams - Mock Exam Set 3 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Physics HL/Mock exams/Set 3/IB Physics HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Physics HL/Mock exams/Set 3/IB Physics HL - Practice Exams - Mock Exam Set 3 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 4",
+                files: [
+                  { title: "Paper 1A", path: "Physics HL/Mock exams/Set 4/IB Physics HL - Practice Exams - Mock Exam Set 4 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Physics HL/Mock exams/Set 4/IB Physics HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Physics HL/Mock exams/Set 4/IB Physics HL - Practice Exams - Mock Exam Set 4 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 5",
+                files: [
+                  { title: "Paper 1A", path: "Physics HL/Mock exams/Set 5/IB Physics HL - Practice Exams - Mock Exam Set 5 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Physics HL/Mock exams/Set 5/IB Physics HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Physics HL/Mock exams/Set 5/IB Physics HL - Practice Exams - Mock Exam Set 5 Paper 2.html" }
+                ]
+              },
+              {
+                name: "Set 6",
+                files: [
+                  { title: "Paper 1A", path: "Physics HL/Mock exams/Set 6/IB Physics HL - Practice Exams - Mock Exam Set 6 Paper 1A.html" },
+                  { title: "Paper 1B", path: "Physics HL/Mock exams/Set 6/IB Physics HL Paper 1B - Paper 1B.html" },
+                  { title: "Paper 2", path: "Physics HL/Mock exams/Set 6/IB Physics HL - Practice Exams - Mock Exam Set 6 Paper 2.html" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "Notes",
+            children: [
+              {
+                name: "Theme A — Space, Time, and Motion",
+                files: [
+                  { title: "A.1 — Kinematics", path: "Physics HL/Notes/RV - IB Physics HL - Space, Time, and Motion - A.1 - Kinematics.pdf" },
+                  { title: "A.2 — Forces & Momentum", path: "Physics HL/Notes/RV - IB Physics HL - Space, Time, and Motion - A.2 - Forces & Momentum.pdf" },
+                  { title: "A.3 — Work, Energy, and Power", path: "Physics HL/Notes/RV - IB Physics HL - Space, Time, and Motion - A.3 - Work, Energy, and Power.pdf" },
+                  { title: "A.4 — Rotational Mechanics", path: "Physics HL/Notes/RV - IB Physics HL - Space, Time, and Motion - A.4 - Rotational Mechanics.pdf" },
+                  { title: "A.5 — Special Relativity", path: "Physics HL/Notes/RV - IB Physics HL - Space, Time, and Motion - A.5 - Special Relativity.pdf" }
+                ]
+              },
+              {
+                name: "Theme B — The Particulate Nature of Matter",
+                files: [
+                  { title: "B.1 — Thermal Energy Transfers", path: "Physics HL/Notes/RV - IB Physics HL - The Particulate Nature of Matter - B.1 - Thermal Energy Transfers.pdf" },
+                  { title: "B.2 — Greenhouse Effect", path: "Physics HL/Notes/RV - IB Physics HL - The Particulate Nature of Matter - B.2 - Greenhouse Effect.pdf" },
+                  { title: "B.3 — Ideal Gas Model", path: "Physics HL/Notes/RV - IB Physics HL - The Particulate Nature of Matter - B.3 - Ideal Gas Model.pdf" },
+                  { title: "B.4 — Thermodynamics", path: "Physics HL/Notes/RV - IB Physics HL - The Particulate Nature of Matter - B.4 - Thermodynamics.pdf" },
+                  { title: "B.5 — Electric Circuits", path: "Physics HL/Notes/RV - IB Physics HL - The Particulate Nature of Matter - B.5 - Electric Circuits.pdf" }
+                ]
+              },
+              {
+                name: "Theme C — Wave Behaviour",
+                files: [
+                  { title: "C.1 — Simple Harmonic Motion", path: "Physics HL/Notes/RV - IB Physics HL - Wave Behaviour - C.1 - Simple Harmonic Motion.pdf" },
+                  { title: "C.2 — Travelling Waves", path: "Physics HL/Notes/RV - IB Physics HL - Wave Behaviour - C.2 - Travelling Waves.pdf" },
+                  { title: "C.3 — Refraction, Diffraction, Superposition, and Interference", path: "Physics HL/Notes/RV - IB Physics HL - Wave Behaviour - C.3 - Refraction, Diffraction, Superposition, and Interference.pdf" },
+                  { title: "C.4 — Standing Waves & Resonance", path: "Physics HL/Notes/RV - IB Physics HL - Wave Behaviour - C.4 - Standing Waves & Resonance.pdf" },
+                  { title: "C.5 — Doppler Effect", path: "Physics HL/Notes/RV - IB Physics HL - Wave Behaviour - C.5 - Doppler Effect.pdf" }
+                ]
+              },
+              {
+                name: "Theme D — Fields",
+                files: [
+                  { title: "D.1 — Gravitational Fields & Potential", path: "Physics HL/Notes/RV - IB Physics HL - Fields - D.1 - Gravitational Fields & Potential.pdf" },
+                  { title: "D.2 — Electromagnetic Fields & Potential", path: "Physics HL/Notes/RV - IB Physics HL - Fields - D.2 - Electromagnetic Fields & Potential.pdf" },
+                  { title: "D.3 — Motion in Electromagnetic Fields", path: "Physics HL/Notes/RV - IB Physics HL - Fields - D.3 - Motion in Electromagnetic Fields.pdf" },
+                  { title: "D.4 — Electromagnetic Induction", path: "Physics HL/Notes/RV - IB Physics HL - Fields - D.4 - Electromagnetic Induction.pdf" }
+                ]
+              },
+              {
+                name: "Theme E — Nuclear & Quantum Physics",
+                files: [
+                  { title: "E.1 — Atomic Structure", path: "Physics HL/Notes/RV - IB Physics HL - Nuclear & Quantum Physics - E.1 - Atomic Structure.pdf" },
+                  { title: "E.2 — Quantum Physics", path: "Physics HL/Notes/RV - IB Physics HL - Nuclear & Quantum Physics - E.2 - Quantum Physics.pdf" },
+                  { title: "E.3 — Radioactive Decay", path: "Physics HL/Notes/RV - IB Physics HL - Nuclear & Quantum Physics - E.3 - Radioactive Decay.pdf" },
+                  { title: "E.4 — Nuclear Fission", path: "Physics HL/Notes/RV - IB Physics HL - Nuclear & Quantum Physics - E.4 - Nuclear Fission.pdf" },
+                  { title: "E.5 — Stellar Properties & Processes", path: "Physics HL/Notes/RV - IB Physics HL - Nuclear & Quantum Physics - E.5 - Stellar Properties & Processes.pdf" }
+                ]
+              },
+              {
+                name: "Paper 1B",
+                files: [
+                  { title: "Data-based Skills", path: "Physics HL/Notes/RV - IB Physics HL - Paper 1B - Paper 1B - Data-based Skills.pdf" }
+                ]
+              }
+            ]
+          },
+          {
+            name: "Paper 1B",
+            children: [
+              {
+                name: "Theme A",
+                files: [
+                  { title: "Acceleration of Free Fall: Direct Timing", path: "Physics HL/Paper 1B/Theme A/IB Physics HL Paper 1B - Acceleration of Free Fall_ Direct Timing.html" },
+{ title: "Deformation of a Plastic Ruler due to a Mass", path: "Physics HL/Paper 1B/Theme A/IB Physics HL Paper 1B - Deformation of a Plastic Ruler due to a Mass.html" },
+{ title: "Metal Sphere Falling Through Oil", path: "Physics HL/Paper 1B/Theme A/IB Physics HL Paper 1B - Metal Sphere Falling Through Oil.html" },
+{ title: "Newton's 2nd Law: Cart With a Hanging Mass", path: "Physics HL/Paper 1B/Theme A/IB Physics HL Paper 1B - Newton's 2nd Law_ Cart With a Hanging Mass.html" },
+{ title: "Viscosity of a Liquid", path: "Physics HL/Paper 1B/Theme A/IB Physics HL Paper 1B - Viscosity of a Liquid.html" }
+]
+},
+{
+name: "Theme B",
+files: [
+{ title: "Boyle's Law Experiment 1", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Boyle's Law Experiment 1.html" },
+{ title: "Boyle's Law Experiment 2", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Boyle's Law Experiment 2.html" },
+{ title: "Internal Resistance of a Cell", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Internal Resistance of a Cell.html" },
+{ title: "Latent Heat of Vapourisation of Water", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Latent Heat of Vapourisation of Water.html" },
+{ title: "Pressure-Volume Relationship in a Gas Syringe", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Pressure-Volume Relationship in a Gas Syringe.html" },
+{ title: "Resistance vs. Length for a Wire", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Resistance vs. Length for a Wire.html" },
+{ title: "Resistance vs. Temperature in a Wire", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Resistance vs. Temperature in a Wire.html" },
+{ title: "Specific Heat Capacity of Water", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Specific Heat Capacity of Water.html" },
+{ title: "Volume-Temp. Relationship in a Capillary Tube", path: "Physics HL/Paper 1B/Theme B/IB Physics HL Paper 1B - Volume-Temp. Relationship in a Capillary Tube.html" }
+]
+},
+{
+name: "Theme C",
+files: [
+{ title: "Double Slit Experiment 1", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Double Slit Experiment 1.html" },
+{ title: "Double Slit Experiment 2", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Double Slit Experiment 2.html" },
+{ title: "Effect of String Tension on Resonant Frequency", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Effect of String Tension on Resonant Frequency.html" },
+{ title: "Refraction of Light in a Glass Block", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Refraction of Light in a Glass Block.html" },
+{ title: "Resonance in an Air Column Experiment 1", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Resonance in an Air Column Experiment 1.html" },
+{ title: "Resonance in an Air Column Experiment 2", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Resonance in an Air Column Experiment 2.html" },
+{ title: "Speed of Sound by Direct Timing", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Speed of Sound by Direct Timing.html" },
+{ title: "Speed of Sound in a Gas", path: "Physics HL/Paper 1B/Theme C/IB Physics HL Paper 1B - Speed of Sound in a Gas.html" }
+]
+},
+{
+name: "Theme D",
+files: [
+{ title: "Electrostatic Force Between Charged Metal Spheres", path: "Physics HL/Paper 1B/Theme D/IB Physics HL Paper 1B - Electrostatic Force Between Charged Metal Spheres.html" }
+]
+}
+]
+},
+{
+name: "Prediction exam",
+files: [
+{ title: "Paper 1A", path: "Physics HL/Prediction exam/IB Physics HL Prediction Exam - Paper 1A.html" },
+{ title: "Paper 1B", path: "Physics HL/Prediction exam/IB Physics HL Paper 1B - Paper 1B.html" },
+{ title: "Paper 2", path: "Physics HL/Prediction exam/IB Physics HL Prediction Exam - Paper 2.html" }
+]
+},
+{
+name: "Revision Ladder",
+files: [
+{ title: "Level 1", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 1.html" },
+{ title: "Level 2", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 2.html" },
+{ title: "Level 3", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 3.html" },
+{ title: "Level 4", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 4.html" },
+{ title: "Level 5", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 5.html" },
+{ title: "Level 6", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 6.html" },
+{ title: "Level 7", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 7.html" },
+{ title: "Level 8", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 8.html" },
+{ title: "Level 9", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 9.html" },
+{ title: "Level 10", path: "Physics HL/Revision Ladder/IB Physics HL Practice Exam - Revision Ladder - Level 10.html" }
+]
+},
+{
+name: "Topic Quizzes",
+children: [
+{
+name: "Theme A",
+files: [
+{ title: "A.1 Motion Graphs", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.1 Motion Graphs.html" },
+{ title: "A.1 Projectile Motion", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.1 Projectile Motion.html" },
+{ title: "A.1 Uniform Acceleration", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.1 Uniform Acceleration.html" },
+{ title: "A.2 Circular Motion", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.2 Circular Motion.html" },
+{ title: "A.2 Forces", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.2 Forces.html" },
+{ title: "A.2 Momentum", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.2 Momentum.html" },
+{ title: "A.3 Work, Energy, and Power", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.3 Work, Energy, and Power.html" },
+{ title: "A.4 Rotational Mechanics", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.4 Rotational Mechanics.html" },
+{ title: "A.5 Special Relativity", path: "Physics HL/Topic Quizzes/Theme A/IB Physics HL Practice Exam - A.5 Special Relativity.html" }
+]
+},
+{
+name: "Theme B",
+files: [
+{ title: "B.1 Specific & Latent Heat", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.1 Specific & Latent Heat.html" },
+{ title: "B.1 Thermal Energy", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.1 Thermal Energy.html" },
+{ title: "B.2 Greenhouse Effect", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.2 Greenhouse Effect.html" },
+{ title: "B.3 Ideal Gas Laws", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.3 Ideal Gas Laws.html" },
+{ title: "B.4 Thermodynamics", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.4 Thermodynamics.html" },
+{ title: "B.5 Current and Circuits", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.5 Current and Circuits.html" },
+{ title: "B.5 Internal Resistance", path: "Physics HL/Topic Quizzes/Theme B/IB Physics HL Practice Exam - B.5 Internal Resistance.html" }
+]
+},
+{
+name: "Theme C",
+files: [
+{ title: "C.1 Simple Harmonic Motion (HL)", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.1 Simple Harmonic Motion (HL).html" },
+{ title: "C.1 Simple Harmonic Motion (SL)", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.1 Simple Harmonic Motion (SL).html" },
+{ title: "C.2 Travelling Waves", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.2 Travelling Waves.html" },
+{ title: "C.3 Refraction, Diffraction and Superposition", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.3 Refraction, Diffraction and Superposition.html" },
+{ title: "C.3 Single Slit and Multi-Slit Diffraction", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.3 Single Slit and Multi-Slit Diffraction.html" },
+{ title: "C.4 Standing Waves & Resonance", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.4 Standing Waves & Resonance.html" },
+{ title: "C.5 Doppler Effect (Core)", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.5 Doppler Effect (Core).html" },
+{ title: "C.5 Doppler Effect (HL)", path: "Physics HL/Topic Quizzes/Theme C/IB Physics HL Practice Exam - C.5 Doppler Effect (HL).html" }
+]
+},
+{
+name: "Theme D",
+files: [
+{ title: "D.1 Gravitational Fields & Potential", path: "Physics HL/Topic Quizzes/Theme D/IB Physics HL Practice Exam - D.1 Gravitational Fields & Potential.html" },
+{ title: "D.1 Gravitational Fields", path: "Physics HL/Topic Quizzes/Theme D/IB Physics HL Practice Exam - D.1 Gravitational Fields.html" },
+{ title: "D.2 Electric Fields & Potential", path: "Physics HL/Topic Quizzes/Theme D/IB Physics HL Practice Exam - D.2 Electric Fields & Potential.html" },
+{ title: "D.2 Electric Fields", path: "Physics HL/Topic Quizzes/Theme D/IB Physics HL Practice Exam - D.2 Electric Fields.html" },
+{ title: "D.3 Motion in Magnetic Fields", path: "Physics HL/Topic Quizzes/Theme D/IB Physics HL Practice Exam - D.3 Motion in Magnetic Fields.html" },
+{ title: "D.4 Electromagnetic Induction", path: "Physics HL/Topic Quizzes/Theme D/IB Physics HL Practice Exam - D.4 Electromagnetic Induction.html" }
+]
+},
+{
+name: "Theme E",
+files: [
+{ title: "E.1 Atomic Structure", path: "Physics HL/Topic Quizzes/Theme E/IB Physics HL Practice Exam - E.1 Atomic Structure.html" },
+{ title: "E.2 Quantum Physics", path: "Physics HL/Topic Quizzes/Theme E/IB Physics HL Practice Exam - E.2 Quantum Physics.html" },
+{ title: "E.3 Radioactive Decay (HL)", path: "Physics HL/Topic Quizzes/Theme E/IB Physics HL Practice Exam - E.3 Radioactive Decay (HL).html" },
+{ title: "E.3 Radioactive Decay (SL)", path: "Physics HL/Topic Quizzes/Theme E/IB Physics HL Practice Exam - E.3 Radioactive Decay (SL).html" },
+{ title: "E.4 Nuclear Fission", path: "Physics HL/Topic Quizzes/Theme E/IB Physics HL Practice Exam - E.4 Nuclear Fission.html" },
+{ title: "E.5 Stellar Properties & Processes", path: "Physics HL/Topic Quizzes/Theme E/IB Physics HL Practice Exam - E.5 Stellar Properties & Processes.html" }
+]
+},
+{
+name: "Tool",
+files: [
+{ title: "Uncertainties & Errors", path: "Physics HL/Topic Quizzes/Tool/IB Physics HL Practice Exam - Uncertainties & Errors.html" },
+{ title: "Vectors and Scalars, Units, Significant Figures, and Measurement", path: "Physics HL/Topic Quizzes/Tool/IB Physics HL Practice Exam - Vectors and Scalars, Units, Significant Figures, and Measurement.html" }
+]
+}
+]
+}
+]
+},
+{
+name: "Spanish SL",
+children: [
+{
+name: "Notes",
+children: [
+{
+name: "Tipos de pregunta",
+files: [
+{ title: "Comprensión auditiva", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de pregunta - Comprensión auditiva.pdf" },
+{ title: "Comprensión de lectura", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de pregunta - Comprensión de lectura.pdf" }
+]
+},
+{
+name: "Tipos de texto",
+files: [
+{ title: "Artículo", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Artículo.pdf" },
+{ title: "Blog", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Blog.pdf" },
+{ title: "Columna de opinión", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Columna de opinión.pdf" },
+{ title: "Correo electrónico", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Correo electrónico.pdf" },
+{ title: "Crónica de noticias", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Crónica de noticias.pdf" },
+{ title: "Diario Personal", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Diario Personal.pdf" },
+{ title: "Discurso", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Discurso.pdf" },
+{ title: "Ensayo", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Ensayo.pdf" },
+{ title: "Entrevista", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Entrevista.pdf" },
+{ title: "Folleto / Hoja informativa / Panfleto", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Folleto_Hoja informativa_Panfleto.pdf" },
+{ title: "Informe", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Informe.pdf" },
+{ title: "Propuesta", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Propuesta.pdf" },
+{ title: "Publicación en redes sociales o foros", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Publicación en redes sociales o foros.pdf" },
+{ title: "Reseña", path: "Spanish SL/Notes/RV - IB Spanish B SL - Tipos de texto - Reseña.pdf" }
+]
+}
+]
+},
+{
+name: "Practice exams",
+children: [
+{
+name: "Reading",
+children: [
+{
+name: "Compartir la planeta",
+files: [
+{ title: "Derechos humanos", path: "Spanish SL/Practice exams/Reading/Compartir la planeta/IB Spanish B SL Assessment Practice - Derechos humanos.html" },
+{ title: "Medio ambiente", path: "Spanish SL/Practice exams/Reading/Compartir la planeta/IB Spanish B SL Assessment Practice - Medio ambiente.html" },
+{ title: "Paz y conflicto", path: "Spanish SL/Practice exams/Reading/Compartir la planeta/IB Spanish B SL Assessment Practice - Paz y conflicto.html" }
+]
+},
+{
+name: "Experiencias",
+files: [
+{ title: "Actividades recreativas", path: "Spanish SL/Practice exams/Reading/Experiencias/IB Spanish B SL Assessment Practice - Actividades recreativas.html" },
+{ title: "Costumbres y tradiciones", path: "Spanish SL/Practice exams/Reading/Experiencias/IB Spanish B SL Assessment Practice - Costumbres y tradiciones.html" },
+{ title: "Historias de vida", path: "Spanish SL/Practice exams/Reading/Experiencias/IB Spanish B SL Assessment Practice - Historias de vida.html" },
+{ title: "Migración", path: "Spanish SL/Practice exams/Reading/Experiencias/IB Spanish B SL Assessment Practice - Migración.html" },
+{ title: "Ritos de paso", path: "Spanish SL/Practice exams/Reading/Experiencias/IB Spanish B SL Assessment Practice - Ritos de paso.html" },
+{ title: "Vacaciones y viajes", path: "Spanish SL/Practice exams/Reading/Experiencias/IB Spanish B SL Assessment Practice - Vacaciones y viajes.html" }
+]
+},
+{
+name: "Identidades",
+files: [
+{ title: "Creencias y valores", path: "Spanish SL/Practice exams/Reading/Identidades/IB Spanish B SL Assessment Practice - Creencias y valores.html" },
+{ title: "Estilos de vida", path: "Spanish SL/Practice exams/Reading/Identidades/IB Spanish B SL Assessment Practice - Estilos de vida.html" },
+{ title: "Lengua e identidad", path: "Spanish SL/Practice exams/Reading/Identidades/IB Spanish B SL Assessment Practice - Lengua e identidad.html" },
+{ title: "Salud y bienestar", path: "Spanish SL/Practice exams/Reading/Identidades/IB Spanish B SL Assessment Practice - Salud y bienestar.html" },
+{ title: "Subculturas", path: "Spanish SL/Practice exams/Reading/Identidades/IB Spanish B SL Assessment Practice - Subculturas.html" }
+]
+},
+{
+name: "Ingenio humano",
+files: [
+{ title: "Comunicación y medios", path: "Spanish SL/Practice exams/Reading/Ingenio humano/IB Spanish B SL Assessment Practice - Comunicación y medios.html" },
+{ title: "Entretenimiento", path: "Spanish SL/Practice exams/Reading/Ingenio humano/IB Spanish B SL Assessment Practice - Entretenimiento.html" },
+{ title: "Expresiones artísticas", path: "Spanish SL/Practice exams/Reading/Ingenio humano/IB Spanish B SL Assessment Practice - Expresiones artísticas.html" },
+{ title: "Innovación científica", path: "Spanish SL/Practice exams/Reading/Ingenio humano/IB Spanish B SL Assessment Practice - Innovación científica.html" },
+{ title: "Tecnología", path: "Spanish SL/Practice exams/Reading/Ingenio humano/IB Spanish B SL Assessment Practice - Tecnología.html" }
+]
+},
+{
+name: "Organización social",
+files: [
+{ title: "Comunidad", path: "Spanish SL/Practice exams/Reading/Organización social/IB Spanish B SL Assessment Practice - Comunidad.html" },
+{ title: "Comunidad gitana", path: "Spanish SL/Practice exams/Reading/Organización social/IB Spanish B SL Assessment Practice - Comunidad gitana.html" },
+{ title: "Ley y orden", path: "Spanish SL/Practice exams/Reading/Organización social/IB Spanish B SL Assessment Practice - Ley y orden.html" },
+{ title: "Mundo laboral", path: "Spanish SL/Practice exams/Reading/Organización social/IB Spanish B SL Assessment Practice - Mundo laboral.html" },
+{ title: "Participación social", path: "Spanish SL/Practice exams/Reading/Organización social/IB Spanish B SL Assessment Practice - Participación social.html" },
+{ title: "Relaciones sociales", path: "Spanish SL/Practice exams/Reading/Organización social/IB Spanish B SL Assessment Practice - Relaciones sociales.html" }
+]
+}
+]
+},
+{
+name: "Writing",
+children: [
+{
+name: "Compartir la planeta",
+files: [
+{ title: "Ética", path: "Spanish SL/Practice exams/Writing/Compartir la planeta/IB Spanish B SL Assessment Practice - Etica.html" },
+{ title: "Medio ambiente", path: "Spanish SL/Practice exams/Writing/Compartir la planeta/IB Spanish B SL Assessment Practice - Medio ambiente.html" },
+{ title: "Paz y conflicto", path: "Spanish SL/Practice exams/Writing/Compartir la planeta/IB Spanish B SL Assessment Practice - Paz y conflicto.html" }
+]
+},
+{
+name: "Experiencias",
+files: [
+{ title: "Actividades recreativas", path: "Spanish SL/Practice exams/Writing/Experiencias/IB Spanish B SL Assessment Practice - Actividades recreativas.html" },
+{ title: "Costumbres y tradiciones", path: "Spanish SL/Practice exams/Writing/Experiencias/IB Spanish B SL Assessment Practice - Costumbres y tradiciones.html" },
+{ title: "Historias de vida", path: "Spanish SL/Practice exams/Writing/Experiencias/IB Spanish B SL Assessment Practice - Historias de vida.html" },
+{ title: "Vacaciones y viajes", path: "Spanish SL/Practice exams/Writing/Experiencias/IB Spanish B SL Assessment Practice - Vacaciones y viajes.html" }
+]
+},
+{
+name: "Identidades",
+files: [
+{ title: "Creencias y valores", path: "Spanish SL/Practice exams/Writing/Identidades/IB Spanish B SL Assessment Practice - Creencias y valores.html" },
+{ title: "Estilos de vida", path: "Spanish SL/Practice exams/Writing/Identidades/IB Spanish B SL Assessment Practice - Estilos de vida.html" },
+{ title: "Lengua e identidad", path: "Spanish SL/Practice exams/Writing/Identidades/IB Spanish B SL Assessment Practice - Lengua e identidad.html" },
+{ title: "Salud y bienestar", path: "Spanish SL/Practice exams/Writing/Identidades/IB Spanish B SL Assessment Practice - Salud y bienestar.html" }
+]
+},
+{
+name: "Ingenio humano",
+files: [
+{ title: "Comunicación y medios", path: "Spanish SL/Practice exams/Writing/Ingenio humano/IB Spanish B SL Assessment Practice - Comunicación y medios.html" },
+{ title: "Entretenimiento", path: "Spanish SL/Practice exams/Writing/Ingenio humano/IB Spanish B SL Assessment Practice - Entretenimiento.html" },
+{ title: "Expresiones artísticas", path: "Spanish SL/Practice exams/Writing/Ingenio humano/IB Spanish B SL Assessment Practice - Expresiones artísticas.html" },
+{ title: "Innovación científica", path: "Spanish SL/Practice exams/Writing/Ingenio humano/IB Spanish B SL Assessment Practice - Innovación científica.html" },
+{ title: "Tecnología", path: "Spanish SL/Practice exams/Writing/Ingenio humano/IB Spanish B SL Assessment Practice - Tecnología.html" }
+]
+},
+{
+name: "Organización social",
+files: [
+{ title: "Comunidad", path: "Spanish SL/Practice exams/Writing/Organización social/IB Spanish B SL Assessment Practice - Comunidad.html" },
+{ title: "Educación", path: "Spanish SL/Practice exams/Writing/Organización social/IB Spanish B SL Assessment Practice - Educación.html" },
+{ title: "Mundo laboral", path: "Spanish SL/Practice exams/Writing/Organización social/IB Spanish B SL Assessment Practice - Mundo laboral.html" },
+{ title: "Participación social", path: "Spanish SL/Practice exams/Writing/Organización social/IB Spanish B SL Assessment Practice - Participación social.html" },
+{ title: "Relaciones sociales", path: "Spanish SL/Practice exams/Writing/Organización social/IB Spanish B SL Assessment Practice - Relaciones sociales.html" }
+]
+}
+]
+}
+]
+},
+{
+name: "Writing exams",
+files: [
+{ title: "Paper 1: Writing (1)", path: "Spanish SL/Writing exams/IB Spanish B SL Assessment Practice - Paper 1_ Writing (1).html" },
+{ title: "Paper 1: Writing (2)", path: "Spanish SL/Writing exams/IB Spanish B SL Assessment Practice - Paper 1_ Writing (2).html" },
+{ title: "Paper 1: Writing (3)", path: "Spanish SL/Writing exams/IB Spanish B SL Assessment Practice - Paper 1_ Writing (3).html" }
+]
+}
+]
+}
+];
+const CHEVRON_SVG = <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
+const FILE_SVG = <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
+function countFiles(node) {
+let total = node.files ? node.files.length : 0;
+if (node.children) {
+node.children.forEach(child => total += countFiles(child));
+}
+return total;
+}
+function renderNode(node) {
+const details = document.createElement("details");
+details.dataset.folderName = node.name.toLowerCase();
+const summary = document.createElement("summary");
+const totalFiles = countFiles(node);
+summary.innerHTML = <span class="summary-left"> <span>${node.name}</span> <span class="count-badge">${totalFiles}</span> </span> ${CHEVRON_SVG};
+details.appendChild(summary);
+const content = document.createElement("div");
+content.className = "folder-content";
+if (node.children) {
+node.children.forEach(child => content.appendChild(renderNode(child)));
+}
+if (node.files) {
+const ul = document.createElement("ul");
+ul.className = "file-list";
+node.files.forEach(file => {
+const li = document.createElement("li");
+li.className = "file-item";
+li.dataset.fileName = file.title.toLowerCase();
+const isPdf = file.path.toLowerCase().endsWith(".pdf");
+const encodedHref = file.path.split("/").map(encodeURIComponent).join("/");
+const a = document.createElement("a");
+a.href = encodedHref;
+a.target = "_blank";
+a.rel = "noopener noreferrer";
+a.innerHTML = <span class="file-left"> ${FILE_SVG} <span class="file-title" title="${file.title}">${file.title}</span> </span> <span class="badge ${isPdf ? 'badge-pdf' : ''}">${isPdf ? 'PDF' : 'HTML'}</span>;
+li.appendChild(a);
+ul.appendChild(li);
+});
+content.appendChild(ul);
+}
+details.appendChild(content);
+return details;
+}
+const root = document.getElementById("directoryRoot");
+DIRECTORY_DATA.forEach(subject => root.appendChild(renderNode(subject)));
+const searchInput = document.getElementById("searchInput");
+const emptyState = document.getElementById("emptyState");
+searchInput.addEventListener("input", () => {
+const query = searchInput.value.trim().toLowerCase();
+const allDetails = Array.from(root.querySelectorAll("details"));
+if (!query) {
+root.querySelectorAll(".hidden").forEach(el => el.classList.remove("hidden"));
+allDetails.forEach(d => d.open = false);
+emptyState.style.display = "none";
+return;
+}
+function filterDetails(detailsEl) {
+const folderMatches = detailsEl.dataset.folderName.includes(query);
+let hasVisibleChild = false;
+const childDetails = Array.from(detailsEl.querySelector(":scope > .folder-content").children)
+.filter(el => el.tagName === "DETAILS");
+childDetails.forEach(child => {
+if (filterDetails(child)) hasVisibleChild = true;
+});
+const fileItems = Array.from(detailsEl.querySelectorAll(":scope > .folder-content > .file-list > .file-item"));
+fileItems.forEach(li => {
+const fileMatches = li.dataset.fileName.includes(query) || folderMatches;
+li.classList.toggle("hidden", !fileMatches);
+if (fileMatches) hasVisibleChild = true;
+});
+const shouldShow = folderMatches || hasVisibleChild;
+detailsEl.classList.toggle("hidden", !shouldShow);
+detailsEl.open = shouldShow;
+return shouldShow;
+}
+let anyVisible = false;
+const topLevel = Array.from(root.children);
+topLevel.forEach(d => {
+if (filterDetails(d)) anyVisible = true;
+});
+emptyState.style.display = anyVisible ? "none" : "block";
+});
+const toggleAllBtn = document.getElementById("toggleAllBtn");
+let allExpanded = false;
+toggleAllBtn.addEventListener("click", () => {
+allExpanded = !allExpanded;
+root.querySelectorAll("details:not(.hidden)").forEach(d => d.open = allExpanded);
+toggleAllBtn.textContent = allExpanded ? "Collapse All" : "Expand All";
+});
