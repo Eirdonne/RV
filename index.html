@@ -105,6 +105,7 @@
     .empty-state { display: none; text-align: center; padding: 3rem 1rem; color: var(--muted-fg); font-size: 0.875rem; }
     .hidden { display: none !important; }
   </style>
+<base target="_blank">
 </head>
 <body>
   <div class="container">
@@ -1002,8 +1003,8 @@ files: [
 ]
 }
 ];
-const CHEVRON_SVG = <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
-const FILE_SVG = <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
+const CHEVRON_SVG = `<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+const FILE_SVG = `<svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 function countFiles(node) {
 let total = node.files ? node.files.length : 0;
 if (node.children) {
@@ -1016,7 +1017,7 @@ const details = document.createElement("details");
 details.dataset.folderName = node.name.toLowerCase();
 const summary = document.createElement("summary");
 const totalFiles = countFiles(node);
-summary.innerHTML = <span class="summary-left"> <span>${node.name}</span> <span class="count-badge">${totalFiles}</span> </span> ${CHEVRON_SVG};
+summary.innerHTML = `<span class="summary-left"> <span>${node.name}</span> <span class="count-badge">${totalFiles}</span> </span> ${CHEVRON_SVG}`;
 details.appendChild(summary);
 const content = document.createElement("div");
 content.className = "folder-content";
@@ -1036,7 +1037,7 @@ const a = document.createElement("a");
 a.href = encodedHref;
 a.target = "_blank";
 a.rel = "noopener noreferrer";
-a.innerHTML = <span class="file-left"> ${FILE_SVG} <span class="file-title" title="${file.title}">${file.title}</span> </span> <span class="badge ${isPdf ? 'badge-pdf' : ''}">${isPdf ? 'PDF' : 'HTML'}</span>;
+a.innerHTML = `<span class="file-left"> ${FILE_SVG} <span class="file-title" title="${file.title}">${file.title}</span> </span> <span class="badge ${isPdf ? 'badge-pdf' : ''}">${isPdf ? 'PDF' : 'HTML'}</span>`;
 li.appendChild(a);
 ul.appendChild(li);
 });
@@ -1091,3 +1092,6 @@ allExpanded = !allExpanded;
 root.querySelectorAll("details:not(.hidden)").forEach(d => d.open = allExpanded);
 toggleAllBtn.textContent = allExpanded ? "Collapse All" : "Expand All";
 });
+</script>
+</body>
+</html>
