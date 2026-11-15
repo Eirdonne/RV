@@ -1159,8 +1159,32 @@ return details;
 }
 const root = document.getElementById("directoryRoot");
 DIRECTORY_DATA.forEach(subject => root.appendChild(renderNode(subject)));
+DIRECTORY_DATA.forEach(subject => root.appendChild(renderNode(subject)));
 const searchInput = document.getElementById("searchInput");
-const emptyState = document.getElementById("emptyState");
+async function loadExamMateFromGitHub(eirdonne, RV) {
+  const res = await fetch(`https://github.com{eirdonne}/${RV}/git/trees/main?recursive=1`);
+  if (!res.ok) return;
+  const { tree } = await res.json();
+
+  const examMateNode = DIRECTORY_DATA.find(s => s.name === "Exam-mate");
+  if (!examMateNode) return;
+
+  tree.filter(item => item.type === "blob" && item.path.startsWith("Exam-mate/"))
+      .forEach(file => {
+        const parts = file.path.split("/");
+        if (parts.length < 4) return;
+        const topic = examMateNode.children.find(t => t.name.startsWith(parts[1]));
+        const chapter = topic?.children.find(c => c.name.includes(parts[2]));
+        if (chapter) {
+          const fileName = parts[parts.length - 1].replace(/\.(html|pdf)$/i, "");
+          chapter.files.push({ title: fileName, path: file.path });
+        }
+      });
+}
+(async () => {
+  await loadExamMateFromGitHub("eirdonne", "RV");
+  DIRECTORY_DATA.forEach(subject => root.appendChild(renderNode(subject)));
+})();
 searchInput.addEventListener("input", () => {
 const query = searchInput.value.trim().toLowerCase();
 const allDetails = Array.from(root.querySelectorAll("details"));
